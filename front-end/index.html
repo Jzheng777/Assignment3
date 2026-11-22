@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Photo Album</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; padding: 0 16px; }
+    section { margin-bottom: 24px; }
+    input { padding: 6px; margin-right: 6px; }
+    #search-box { width: 300px; }
+    #results img { width: 200px; height: 200px; object-fit: cover; margin: 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Photo Album</h1>
+
+  <!-- This is the search box where the user types what they want to find -->
+  <section>
+    <h2>Search</h2>
+    <input id="search-box" placeholder="e.g. show me dogs and cats">
+    <button onclick="search()">Search</button>
+  </section>
+
+  <!-- This is the upload form with the file picker and the custom labels box -->
+  <section>
+    <h2>Upload</h2>
+    <input type="file" id="file-input" accept="image/jpeg,image/png">
+    <input id="labels-box" placeholder="Custom labels, e.g. Sam, Sally">
+    <button onclick="upload()">Upload</button>
+  </section>
+
+  <div id="results"></div>
+
+  <!-- We load the SDK files in order -->
+  <script src="sdk/lib/axios/dist/axios.standalone.js"></script>
+  <script src="sdk/lib/CryptoJS/rollups/crypto-js.js"></script>
+  <script src="sdk/lib/CryptoJS/rollups/sha256.js"></script>
+  <script src="sdk/lib/CryptoJS/components/hmac.js"></script>
+  <script src="sdk/lib/CryptoJS/components/enc-base64.js"></script>
+  <script src="sdk/lib/url-template/url-template.js"></script>
+  <script src="sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+  <script src="sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+  <script src="sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+  <script src="sdk/lib/apiGatewayCore/utils.js"></script>
+  <script src="sdk/apigClient.js"></script>
+
+  <script src="app.js"></script>
+</body>
+</html>
