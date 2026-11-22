@@ -1,0 +1,12 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      # We zip each Lambda's code on its own
+      - zip -j index-photos.zip lambda-functions/index-photos/lambda_function.py
+      - zip -j search-photos.zip lambda-functions/search-photos/lambda_function.py
+
+      # Then we send each zip to its Lambda so the new code replaces the old one
+      - aws lambda update-function-code --function-name index-photos --zip-file fileb://index-photos.zip
+      - aws lambda update-function-code --function-name search-photos --zip-file fileb://search-photos.zip
