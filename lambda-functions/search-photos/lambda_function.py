@@ -12,7 +12,7 @@ OS_ENDPOINT = os.environ["OS_ENDPOINT"]
 OS_HEADERS = urllib3.make_headers(basic_auth=f"{os.environ['OS_USER']}:{os.environ['OS_PASS']}")
 OS_HEADERS["Content-Type"] = "application/json"
 
-
+# TESTING P1
 def lambda_handler(event, context):
     q = (event.get("queryStringParameters") or {}).get("q", "")
     if not q:
