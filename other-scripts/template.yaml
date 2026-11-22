@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Photo album stack with both Lambdas, API Gateway, and both S3 buckets
+
+Resources:
+  # This is the role both Lambdas use so they can run and write logs
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  # The photos bucket
+  PhotosBucket:
+    Type: AWS::S3::Bucket
+
+  # The frontend bucket set up as a public website
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  # We have to make the frontend bucket publicly readable
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${FrontendBucket.Arn}/*"
+
+  # These are the two Lambdas with their code written in the template
+  IndexPhotosFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: index-photos-cf
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              print("index-photos-cf received:", event)
+              return {"message": "index-photos-cf is running"}
+
+  SearchPhotosFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: search-photos-cf
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          import json
+
+          def lambda_handler(event, context):
+              return {"statusCode": 200, "body": json.dumps({"results": []})}
+
+  PhotoApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: photo-search-api-cf
+
+  SearchResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref PhotoApi
+      ParentId: !GetAtt PhotoApi.RootResourceId
+      PathPart: search
+
+  SearchMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PhotoApi
+      ResourceId: !Ref SearchResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchPhotosFunction.Arn}/invocations"
+
+  # This lets API Gateway run the search Lambda
+  SearchPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SearchPhotosFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  # We deploy the API to a prod stage after the method exists
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: SearchMethod
+    Properties:
+      RestApiId: !Ref PhotoApi
+      StageName: prod
+
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt FrontendBucket.WebsiteURL
